@@ -1,5 +1,5 @@
 let username
-// let socket = io()
+let socket = io()
 do{
     username = prompt("Enter your name")
 }while(!username)
@@ -26,7 +26,8 @@ function postComment(comment){
 
     appendToDom(data);
     textarea.value = '';
-
+    broadcastComment(data);
+    syncWithDb(data);
 
 }
 
@@ -53,6 +54,59 @@ function appendToDom(data)
     commentBox.prepend(lTag)
                 
 }
+function broadcastComment(data){
+    socket.emit("comment",data);
+}
+socket.on('comment',(data)=>{
+    appendToDom(data);
+})
 
+
+let timerId = null
+function debounce(func, timer) {
+    if(timerId) {
+        clearTimeout(timerId)
+    }
+    timerId = setTimeout(() => {
+        func()
+    }, timer)
+}
+let typingDiv = document.querySelector('.typing')
+socket.on('typing', (data) => {
+    typingDiv.innerText = `${data.username} is typing...`
+    debounce(function() {
+        typingDiv.innerText = ''
+    }, 1000)
+})
+
+
+textarea.addEventListener('keyup',(e) => {
+    socket.emit('typing', { username });
+})
+
+
+function syncWithDb(data){
+    const headers = {
+        'Content-Type' : 'application/json'
+    }
+    fetch('/api/comment', {method : 'Post', body: JSON.stringify(data),headers})
+        .then(response => response.json())
+        .then(result => {
+            console.log(result)
+        })
+}
+
+function fetchComments(){
+    fetch('/api/comments')
+        .then(res => res.json())
+        .then(result => {
+            result.forEach(comment => {
+                comment.time = comment.createdAt;
+                appendToDom(comment);
+            })
+        })
+}
+
+window.onload = fetchComments
 
 

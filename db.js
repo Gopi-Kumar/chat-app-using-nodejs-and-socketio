@@ -1,6 +1,6 @@
 function dbConnect(){
     const mongoose = require('mongoose');
-    const url = 'mongodb+srv://gkkaushik:oQb2IJA1t3ytu6Sx@cluster0.s5h8o.mongodb.net/chat_app'
+    const url = process.env.DBURL
 
     mongoose.connect(url,{
         userNewUrlParser: true,
